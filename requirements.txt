@@ -7,4 +7,4 @@ numpy<2.0.0
 pandas
 plotly
 scikit-learn
-h5py
+scipy
