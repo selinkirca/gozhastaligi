@@ -31,7 +31,7 @@ def load_eye_model():
     if not os.path.exists(MODEL_PATH):
         return None
     
-    # --- KERAS 3 UYUMLULUK YAMASI ---
+    # --- KERAS 3 UYUMLULUK YAMASI (Tüm Hataları Kökten Çözer) ---
     from tensorflow.keras.layers import InputLayer
 
     # batch_shape hatasını yakalayıp düzelten sahte katman
@@ -54,16 +54,16 @@ def load_eye_model():
     }
 
     try:
-        # Modeli bu özel nesnelerle yükle
         return tf.keras.models.load_model(
             MODEL_PATH, 
             compile=False, 
             custom_objects=custom_objects
         )
     except Exception as e:
-        st.error(f"Yükleme hatası detayı: {e}")
+        st.error(f"Yükleme hatası: {e}")
         return None
 
+# Modeli yükle
 model = load_eye_model()
 class_names = ['Cataract (Katarakt)', 'Diabetic Retinopathy', 'Glaucoma (Glokom)', 'Normal']
 
@@ -79,28 +79,28 @@ def preprocess_for_model(img_array):
     img_resized = cv2.resize(img_array, (224, 224))
     return np.expand_dims(img_resized / 255.0, axis=0)
 
-# 3. SIDEBAR
+# 3. SIDEBAR (Selin Kırca - 220706005)
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/822/822102.png", width=100)
-    st.markdown("<h2 style='text-align: center;'>Oculus AI v1</h2>", unsafe_allow_html=True)
-    menu = st.radio("Sistem Menüsü:", ["📊 Genel Vizyon", "🔬 Laboratuvar (Teşhis)", "📈 Performans Analizi"])
+    st.markdown("<h2 style='text-align: center;'>Oculus AI</h2>", unsafe_allow_html=True)
+    menu = st.radio("Sistem Menüsü:", ["📊 Genel Vizyon", "🔬 Teşhis Merkezi", "📈 Performans Analizi"])
     
     st.divider()
     st.markdown(f"""
-    <div style='background-color: #1f2937; padding: 15px; border-radius: 10px; border: 1px solid #30363d;'>
+    <div style='background-color: #1f2937; padding: 15px; border-radius: 10px;'>
     <p style='margin:0; font-size: 14px;'><b>Geliştirici:</b> Selin Kırca</p>
     <p style='margin:0; font-size: 14px;'><b>Öğrenci No:</b> 220706005</p>
     <p style='margin:0; font-size: 14px;'><b>Ders:</b> Sağlık Bilişimi</p>
     </div>
     """, unsafe_allow_html=True)
 
-# --- BÖLÜMLER ---
+# --- İÇERİKLER ---
 if menu == "📊 Genel Vizyon":
     st.header("📊 Sağlık Bilişimi: Göz Hastalıkları Analizi")
     st.write("Retina fotoğraflarını derin öğrenme ile analiz ederek teşhis süreçlerini hızlandırır.")
-    st.info("**Teknoloji:** MobileNetV1 & TensorFlow")
+    st.info("**Mimari:** MobileNetV1 & TensorFlow")
 
-elif menu == "🔬 Laboratuvar (Teşhis)":
+elif menu == "🔬 Teşhis Merkezi":
     st.header("🔬 Retina Analiz Laboratuvarı")
     uploaded_file = st.file_uploader("Bir Retina Kesiti Yükleyin...", type=["jpg", "png", "jpeg"])
 
@@ -109,10 +109,10 @@ elif menu == "🔬 Laboratuvar (Teşhis)":
         enhanced_img = apply_clahe(raw_img)
         
         col1, col2 = st.columns(2)
-        col1.image(enhanced_img, caption="CLAHE Filtresi Uygulandı", use_container_width=True)
+        col1.image(enhanced_img, caption="Filtre Uygulanmış Görüntü", use_container_width=True)
         
         with col2:
-            with st.spinner('Analiz ediliyor...'):
+            with st.spinner('Yapay Zeka İnceliyor...'):
                 x = preprocess_for_model(enhanced_img)
                 preds = model.predict(x, verbose=0)
                 idx = np.argmax(preds)
