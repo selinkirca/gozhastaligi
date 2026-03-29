@@ -8,6 +8,8 @@ import pandas as pd
 import plotly.express as px
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
+import h5py
+import json
 
 # 1. SAYFA YAPILANDIRMASI
 st.set_page_config(page_title="Oculus AI | Göz Hastalığı Teşhis", layout="wide")
@@ -26,17 +28,42 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. MODEL YÜKLEME
+# 2. MODEL YÜKLEME VE UYUMLULUK YAMASI (TypeError Çözümü)
 MODEL_PATH = 'eye_disease_final_mobilenet_v1.h5'
 
 @st.cache_resource
 def load_eye_model():
-    if os.path.exists(MODEL_PATH):
-        return tf.keras.models.load_model(MODEL_PATH, compile=False)
-    return None
+    if not os.path.exists(MODEL_PATH):
+        return None
+    
+    # Keras 2 -> 3 geçişindeki batch_shape hatasını düzeltmek için H5 müdahalesi
+    try:
+        with h5py.File(MODEL_PATH, 'r+') as f:
+            if 'model_config' in f.attrs:
+                config_raw = f.attrs['model_config']
+                if isinstance(config_raw, bytes):
+                    config_raw = config_raw.decode('utf-8')
+                
+                config_dict = json.loads(config_raw)
+                modified = False
+                for layer in config_dict['config']['layers']:
+                    if 'batch_shape' in layer['config']:
+                        layer['config']['batch_input_shape'] = layer['config'].pop('batch_shape')
+                        modified = True
+                
+                if modified:
+                    f.attrs['model_config'] = json.dumps(config_dict).encode('utf-8')
+    except:
+        pass
 
-model = load_eye_model()
-class_names = ['Cataract (Katarakt)', 'Diabetic Retinopathy', 'Glaucoma (Glokom)', 'Normal']
+    # compile=False: Modelin sadece tahmin yapmasını sağlar, hata riskini minimize eder
+    return tf.keras.models.load_model(MODEL_PATH, compile=False)
+
+try:
+    model = load_eye_model()
+    class_names = ['Cataract (Katarakt)', 'Diabetic Retinopathy', 'Glaucoma (Glokom)', 'Normal']
+except Exception as e:
+    st.error(f"Model yüklenirken bir hata oluştu: {e}")
 
 # --- GÖRÜNTÜ İŞLEME FONKSİYONLARI ---
 def apply_clahe(pil_image):
@@ -50,7 +77,7 @@ def preprocess_for_model(img_array):
     img_resized = cv2.resize(img_array, (224, 224))
     return np.expand_dims(img_resized / 255.0, axis=0)
 
-# 3. SIDEBAR (Güncellenmiş Kişisel Bilgiler)
+# 3. SIDEBAR
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/822/822102.png", width=100)
     st.markdown("<h2 style='text-align: center;'>Oculus AI v1</h2>", unsafe_allow_html=True)
