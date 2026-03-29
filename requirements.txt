@@ -1,1 +1,10 @@
-
+streamlit
+tensorflow-cpu==2.15.0
+keras==2.15.0
+opencv-python-headless
+Pillow
+numpy<2.0.0
+pandas
+plotly
+scikit-learn
+h5py
