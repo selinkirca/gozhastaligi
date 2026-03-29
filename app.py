@@ -9,7 +9,7 @@ import plotly.express as px
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
 
-# 1. SAYFA YAPILANDIRMASI
+# 1. SAYFA YAPILANDIRMASI (Selin Kırca - 220706005)
 st.set_page_config(page_title="Oculus AI | Göz Hastalığı Teşhis", layout="wide")
 
 # --- GELİŞMİŞ DARK MODE CSS ---
@@ -31,7 +31,7 @@ def load_eye_model():
     if not os.path.exists(MODEL_PATH):
         return None
     
-    # --- KERAS 3 UYUMLULUK YAMASI BAŞLANGIÇ ---
+    # --- KERAS 3 UYUMLULUK YAMASI ---
     from tensorflow.keras.layers import InputLayer
 
     # batch_shape hatasını yakalayıp düzelten sahte katman
@@ -52,9 +52,9 @@ def load_eye_model():
         'InputLayer': CompatibleInputLayer,
         'DTypePolicy': DTypePolicy
     }
-    # --- KERAS 3 UYUMLULUK YAMASI BİTİŞ ---
 
     try:
+        # Modeli bu özel nesnelerle yükle
         return tf.keras.models.load_model(
             MODEL_PATH, 
             compile=False, 
@@ -64,7 +64,6 @@ def load_eye_model():
         st.error(f"Yükleme hatası detayı: {e}")
         return None
 
-# Modeli yükle
 model = load_eye_model()
 class_names = ['Cataract (Katarakt)', 'Diabetic Retinopathy', 'Glaucoma (Glokom)', 'Normal']
 
@@ -80,7 +79,7 @@ def preprocess_for_model(img_array):
     img_resized = cv2.resize(img_array, (224, 224))
     return np.expand_dims(img_resized / 255.0, axis=0)
 
-# 3. SIDEBAR (Selin Kırca - 220706005)
+# 3. SIDEBAR
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/822/822102.png", width=100)
     st.markdown("<h2 style='text-align: center;'>Oculus AI v1</h2>", unsafe_allow_html=True)
@@ -98,19 +97,19 @@ with st.sidebar:
 # --- BÖLÜMLER ---
 if menu == "📊 Genel Vizyon":
     st.header("📊 Sağlık Bilişimi: Göz Hastalıkları Analizi")
-    st.write("Retina fotoğraflarını derin öğrenme ile analiz ederek klinik karar destek süreçlerini hızlandırmayı amaçlar.")
+    st.write("Retina fotoğraflarını derin öğrenme ile analiz ederek teşhis süreçlerini hızlandırır.")
     st.info("**Teknoloji:** MobileNetV1 & TensorFlow")
 
 elif menu == "🔬 Laboratuvar (Teşhis)":
     st.header("🔬 Retina Analiz Laboratuvarı")
-    uploaded_file = st.file_uploader("Bir Fundus Görüntüsü Yükleyin...", type=["jpg", "png", "jpeg"])
+    uploaded_file = st.file_uploader("Bir Retina Kesiti Yükleyin...", type=["jpg", "png", "jpeg"])
 
     if uploaded_file and model is not None:
         raw_img = Image.open(uploaded_file)
         enhanced_img = apply_clahe(raw_img)
         
         col1, col2 = st.columns(2)
-        col1.image(enhanced_img, caption="CLAHE Uygulanmış Görüntü", use_container_width=True)
+        col1.image(enhanced_img, caption="CLAHE Filtresi Uygulandı", use_container_width=True)
         
         with col2:
             with st.spinner('Analiz ediliyor...'):
@@ -121,14 +120,14 @@ elif menu == "🔬 Laboratuvar (Teşhis)":
                 
                 color = "#28a745" if 'Normal' in class_names[idx] else "#dc3545"
                 st.markdown(f"<h2 style='color: {color};'>{class_names[idx]}</h2>", unsafe_allow_html=True)
-                st.metric("Güven Oranı", f"%{conf*100:.2f}")
+                st.metric("Teşhis Güveni", f"%{conf*100:.2f}")
 
                 fig = px.bar(x=class_names, y=preds[0], color=class_names, template="plotly_dark")
                 fig.update_layout(showlegend=False, height=300, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
                 st.plotly_chart(fig, use_container_width=True)
 
 elif menu == "📈 Performans Analizi":
-    st.header("📈 Performans Raporu")
+    st.header("📈 Akademik Metrikler")
     m1, m2, m3 = st.columns(3)
     m1.metric("Doğruluk", "%91.4")
     m2.metric("F1-Score", "0.89")
